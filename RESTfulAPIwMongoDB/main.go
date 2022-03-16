@@ -31,19 +31,19 @@ var (
 	mongoURL string = "mongodb://mongo:mongo@localhost:27017/?authSource=admin"
 )
 
-func CreateUnvanEndpoint(response http.ResponseWriter, request *http.Request) {
+func CreateTitleEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
 	var person Person
 	json.NewDecoder(request.Body).Decode(&person)
-	collection := client.Database("kariyernetDB").Collection("unvanlar-collection")
+	collection := client.Database("DB").Collection("collection")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	result, _ := collection.InsertOne(ctx, person)
 	json.NewEncoder(response).Encode(result)
 }
-func GetUnvanEndpoint(response http.ResponseWriter, request *http.Request) {
+func GetTitleEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
 	var people []Person
-	collection := client.Database("kariyernetDB").Collection("unvanlar-collection")
+	collection := client.Database("DB").Collection("collection")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
@@ -65,12 +65,12 @@ func GetUnvanEndpoint(response http.ResponseWriter, request *http.Request) {
 	json.NewEncoder(response).Encode(people)
 }
 
-func GetOneUnvanEndpoint(response http.ResponseWriter, request *http.Request) {
+func GetOneTitleEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
 	params := mux.Vars(request)
 	id, _ := primitive.ObjectIDFromHex(params["id"])
 	var person Person
-	collection := client.Database("kariyernetDB").Collection("unvanlar-collection")
+	collection := client.Database("DB").Collection("collection")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	err := collection.FindOne(ctx, Person{ID: id}).Decode(&person)
 
@@ -82,7 +82,7 @@ func GetOneUnvanEndpoint(response http.ResponseWriter, request *http.Request) {
 
 	json.NewEncoder(response).Encode(person)
 }
-func DeleteOneUnvanEndpoint(response http.ResponseWriter, request *http.Request) {
+func DeleteOneTitleEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
 	params := mux.Vars(request)
 	id, _ := primitive.ObjectIDFromHex(params["id"])
@@ -102,9 +102,9 @@ func main() {
 	client, _ = mongo.Connect(ctx, options.Client().ApplyURI(mongoURL))
 	defer client.Disconnect(ctx)
 	router := mux.NewRouter()
-	router.HandleFunc("/title", CreateUnvanEndpoint).Methods("POST")
-	router.HandleFunc("/titles", GetUnvanEndpoint).Methods("GET")
-	router.HandleFunc("/title/{id}", GetOneUnvanEndpoint).Methods("GET")
-	router.HandleFunc("/title/{id}", DeleteOneUnvanEndpoint).Methods("DELETE")
+	router.HandleFunc("/title", CreateTitleEndpoint).Methods("POST")
+	router.HandleFunc("/titles", GetTitleEndpoint).Methods("GET")
+	router.HandleFunc("/title/{id}", GetOneTitleEndpoint).Methods("GET")
+	router.HandleFunc("/title/{id}", DeleteOneTitleEndpoint).Methods("DELETE")
 	http.ListenAndServe(":12345", router)
 }
