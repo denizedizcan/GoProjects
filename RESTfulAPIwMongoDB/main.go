@@ -82,6 +82,48 @@ func GetOneTitleEndpoint(response http.ResponseWriter, request *http.Request) {
 
 	json.NewEncoder(response).Encode(person)
 }
+
+func GetTitleEndpointbyName(response http.ResponseWriter, request *http.Request) {
+	response.Header().Add("content-type", "application/json")
+	params := mux.Vars(request)
+	name := params["name"]
+	fmt.Println(name)
+	var people []Person
+	collection := client.Database("DB").Collection("collection")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	cursor, err := collection.Find(ctx, bson.D{{"$or",
+		bson.A{
+			bson.D{{"kelime_1", name}},
+			bson.D{{"kelime_2", name}},
+			bson.D{{"kelime_3", name}},
+			bson.D{{"kelime_4", name}},
+			bson.D{{"kelime_5", name}},
+			bson.D{{"kelime_6", name}},
+			bson.D{{"kelime_7", name}},
+			bson.D{{"kelime_8", name}},
+			bson.D{{"kelime_9", name}},
+		}},
+	})
+
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message": "` + err.Error() + `"}`))
+		return
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var person Person
+		cursor.Decode(&person)
+		people = append(people, person)
+	}
+	if err := cursor.Err(); err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message": "` + err.Error() + `"}`))
+		return
+	}
+	json.NewEncoder(response).Encode(people)
+}
+
 func DeleteOneTitleEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
 	params := mux.Vars(request)
@@ -104,6 +146,7 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/title", CreateTitleEndpoint).Methods("POST")
 	router.HandleFunc("/titles", GetTitleEndpoint).Methods("GET")
+	router.HandleFunc("/titles/{name}", GetTitleEndpointbyName).Methods("GET")
 	router.HandleFunc("/title/{id}", GetOneTitleEndpoint).Methods("GET")
 	router.HandleFunc("/title/{id}", DeleteOneTitleEndpoint).Methods("DELETE")
 	http.ListenAndServe(":12345", router)
